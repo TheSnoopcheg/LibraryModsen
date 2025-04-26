@@ -26,7 +26,7 @@
 
       Выполнять из директории с "LibraryModsen.sln":
       ```bash
-      dotnet ef migration add initial -s LibraryModsen -p LibraryModsen.Persistence
+      dotnet ef migrations add initial -s LibraryModsen -p LibraryModsen.Persistence
       docker build -f LibraryModsen\Dockerfile --force-rm -t test/try .
       ```
 
