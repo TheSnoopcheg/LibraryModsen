@@ -4,80 +4,48 @@ using Microsoft.EntityFrameworkCore;
 
 namespace LibraryModsen.Persistence.Repositories;
 
-public class AuthorsRepository(LibraryDbContext context) : IAuthorsRepository
+public class AuthorsRepository(LibraryDbContext context) : BaseRepository<Author>(context), IAuthorsRepository
 {
     private readonly LibraryDbContext _context = context;
 
-    public async Task<bool> Any(Guid id)
+    public async Task<bool> Any(Guid id, CancellationToken cancelToken = default)
     {
-        return await _context
-            .Authors
-            .AsNoTracking()
-            .AnyAsync(a => a.Id == id);
+        return await Any(a => a.Id == id, cancelToken);
     }
 
-    public async Task<IEnumerable<Author>> GetAll()
-    {
-        return await _context
-            .Authors
-            .AsNoTracking()
-            .Include(a => a.Books)
-            .ToListAsync();
-    }
-
-    public async Task<Author?> GetById(Guid id)
+    public override async Task<IEnumerable<Author>> GetAll(CancellationToken cancelToken = default)
     {
         return await _context
             .Authors
             .AsNoTracking()
             .Include(a => a.Books)
-            .FirstOrDefaultAsync(a => a.Id == id);
+            .ToListAsync(cancelToken);
     }
 
-    public async Task<Guid> Add(Author author)
+    public override async Task<Author?> GetById(Guid id, CancellationToken cancelToken = default)
     {
-        await _context
+        var author = await _context
             .Authors
-            .AddAsync(author);
-        await _context
-            .SaveChangesAsync();
-
-        return author.Id;
+            .AsNoTracking()
+            .Include(a => a.Books)
+            .FirstOrDefaultAsync(a => a.Id == id, cancelToken);
+        if (author == null)
+            throw new Exception("Author not found");
+        return author;
     }
 
-    public async Task<Guid> Update(Author author)
-    {
-        _context
-            .Authors
-            .Update(author);
-        await _context
-            .SaveChangesAsync();
-
-        return author.Id;
-    }
-
-    public async Task<Guid> Delete(Guid id)
-    {
-        await _context
-            .Authors
-            .Where(a => a.Id == id)
-            .ExecuteDeleteAsync();
-
-        return id;
-    }
-
-    public async Task<IEnumerable<Book>> GetAuthorBooks(Guid authorId)
+    public async Task<IEnumerable<Book>> GetAuthorBooks(Guid authorId, CancellationToken cancelToken = default)
     {
         var authorEntity = await _context
             .Authors
             .AsNoTracking()
             .Include(p => p.Books)
-            .FirstOrDefaultAsync(a => a.Id == authorId);
+            .FirstOrDefaultAsync(a => a.Id == authorId, cancelToken);
 
         return authorEntity!.Books;
     }
 
-    public async Task<IEnumerable<Author>> GetPage(int n, int size)
+    public async Task<IEnumerable<Author>> GetPage(int n, int size, CancellationToken cancelToken = default)
     {
         return await _context
             .Authors
@@ -85,6 +53,6 @@ public class AuthorsRepository(LibraryDbContext context) : IAuthorsRepository
             .Skip(n * size)
             .Take(size)
             .Include(a => a.Books)
-            .ToListAsync();
+            .ToListAsync(cancelToken);
     }
 }

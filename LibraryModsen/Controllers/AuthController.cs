@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using LibraryModsen.Application.Contracts.Auth;
-using LibraryModsen.Validators.Auth;
 using Microsoft.AspNetCore.Authorization;
 using LibraryModsen.Application.Abstractions.Services;
 
@@ -9,27 +8,14 @@ namespace LibraryModsen.Controllers;
 [Route("api/[controller]")]
 [ApiController]
 public class AuthController(
-        IAuthService userService,
-        LoginRequestValidator lrValidator,
-        RegisterRequestValidator rrValidator) : ControllerBase
+        IAuthService userService) : ControllerBase
 {
     private readonly IAuthService _userService = userService;
-    private readonly LoginRequestValidator _lrValidator = lrValidator;
-    private readonly RegisterRequestValidator _rrValidator = rrValidator;
 
     [HttpPost("login")]
-    public async Task<IActionResult> Login([FromBody] LoginRequest request)
+    public async Task<IActionResult> Login([FromBody] LoginRequest request, CancellationToken cancelToken = default)
     {
-        var validationRes = await _lrValidator.ValidateAsync(request);
-        if (!validationRes.IsValid)
-        {
-            return BadRequest(validationRes.Errors);
-        }
-        if(!await _userService.ExistsWithEmail(request.Email))
-        {
-            return NotFound();
-        }
-        var token = await _userService.Login(request);
+        var token = await _userService.Login(request, cancelToken);
         if (string.IsNullOrEmpty(token.Item1) || string.IsNullOrEmpty(token.Item2))
         {
             return Forbid();
@@ -55,31 +41,19 @@ public class AuthController(
     }
 
     [HttpPost("register")]
-    public async Task<ActionResult> Register([FromBody] RegisterRequest request)
+    public async Task<ActionResult> Register([FromBody] RegisterRequest request, CancellationToken cancelToken = default)
     {
-        var validationRes = await _rrValidator.ValidateAsync(request);
-        if (!validationRes.IsValid)
-        {
-            return BadRequest(validationRes.Errors);
-        }
-        if(await _userService.ExistsWithEmail(request.Email))
-        {
-            return NoContent();
-        }
-        var errors = await _userService.Register(request);
-        if(errors == null)
-        {
-            return Ok();
-        }
-        return StatusCode(500, errors);
+        await _userService.Register(request, cancelToken); 
+        return Ok();
+
     }
 
     [HttpPost("refresh-token/{userId}", Name = "RefreshTokenRoute")]
-    public async Task<ActionResult> RefreshToken(Guid userId)
+    public async Task<ActionResult> RefreshToken(Guid userId, CancellationToken cancelToken = default)
     {
         var refreshToken = HttpContext.Request.Cookies["token_r"];
         if (string.IsNullOrEmpty(refreshToken)) return Unauthorized("Invalid refresh token");
-        var newToken = await _userService.RefreshToken(userId, refreshToken);
+        var newToken = await _userService.RefreshToken(userId, refreshToken, cancelToken);
         HttpContext.Response.Cookies.Append("token_k", newToken, new CookieOptions
         {
             Secure = true,

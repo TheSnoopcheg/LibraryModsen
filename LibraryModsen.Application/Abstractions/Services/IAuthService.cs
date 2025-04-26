@@ -5,9 +5,9 @@ namespace LibraryModsen.Application.Abstractions.Services
 {
     public interface IAuthService
     {
-        Task<bool> ExistsWithEmail(string email);
-        Task<(string, string)> Login(LoginRequest request);
-        Task<string> RefreshToken(Guid userId, string refreshToken);
-        Task<IEnumerable<IdentityError>?> Register(RegisterRequest request);
+        Task<bool> ExistsWithEmail(string email, CancellationToken cancelToken = default);
+        Task<(string, string)> Login(LoginRequest request, CancellationToken cancelToken = default);
+        Task<string> RefreshToken(Guid userId, string refreshToken, CancellationToken cancelToken = default);
+        Task Register(RegisterRequest request, CancellationToken cancelToken = default);
     }
 }

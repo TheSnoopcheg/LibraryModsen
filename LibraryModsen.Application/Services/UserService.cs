@@ -14,25 +14,25 @@ public class UserService(
     private readonly UserManager<User> _manager = manager;
     private readonly IMapper _mapper = mapper;
 
-    public async Task<UserResponse?> GetById(Guid Id)
+    public async Task<UserResponse?> GetById(Guid Id, CancellationToken cancelToken = default)
     {
         var user = await _manager
             .Users
             .AsNoTracking()
             .Include(u => u.TakenBooks)
                 .ThenInclude(b => b.Book)
-            .FirstOrDefaultAsync(u => u.Id == Id);
+            .FirstOrDefaultAsync(u => u.Id == Id, cancelToken);
         var userRes = _mapper.Map<UserResponse>(user);
         return userRes;
     }
-    public async Task<IEnumerable<NotificationResponse>> GetNotifications(Guid userId)
+    public async Task<IEnumerable<NotificationResponse>> GetNotifications(Guid userId, CancellationToken cancelToken = default)
     {
         var user = await _manager
             .Users
             .AsNoTracking()
             .Include(u => u.TakenBooks)
                 .ThenInclude(b => b.Book)
-            .FirstOrDefaultAsync(u => u.Id == userId);
+            .FirstOrDefaultAsync(u => u.Id == userId, cancelToken);
         List<NotificationResponse> result = new List<NotificationResponse>();
         for(int i = 0; i < user?.TakenBooks?.Count; i++)
         {

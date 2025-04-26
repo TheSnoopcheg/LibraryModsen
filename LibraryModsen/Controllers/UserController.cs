@@ -17,19 +17,19 @@ public class UserController(
 
     [Authorize]
     [HttpGet("me")]
-    public async Task<ActionResult<UserResponse>> GetCurrentUser()
+    public async Task<ActionResult<UserResponse>> GetCurrentUser(CancellationToken cancelToken = default)
     {
         var userId = _currentUser.GetCurrentUserId();
-        var result = await _userService.GetById(userId);
+        var result = await _userService.GetById(userId, cancelToken);
         return Ok(result);
     }
 
     [Authorize]
     [HttpGet("notifications")]
-    public async Task<ActionResult<IEnumerable<NotificationResponse>>> GetNotifications()
+    public async Task<ActionResult<IEnumerable<NotificationResponse>>> GetNotifications(CancellationToken cancelToken = default)
     {
         var userId = _currentUser.GetCurrentUserId();
-        var res = await _userService.GetNotifications(userId);
+        var res = await _userService.GetNotifications(userId, cancelToken);
         return Ok(res);
     }
 }

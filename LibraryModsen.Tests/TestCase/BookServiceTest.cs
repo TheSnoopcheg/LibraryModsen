@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using LibraryModsen.Application.Abstractions.Repositories;
+using LibraryModsen.Application.Abstractions.Services;
 using LibraryModsen.Application.Contracts;
 using LibraryModsen.Application.Contracts.Book;
 using LibraryModsen.Application.Services;
@@ -11,6 +12,7 @@ namespace LibraryModsen.Tests.TestCase;
 public class BookServiceTest
 {
     private readonly Mock<IBooksRepository> _repository = new();
+    private readonly Mock<IBookStateService> _bookStateService = new();
     private readonly Mock<IMapper> _mapper = new();
 
     [Fact]
@@ -25,8 +27,8 @@ public class BookServiceTest
             CoverLink = "Somelinkhere",
             Genre="Fairy tales"
         };
-        _repository.Setup(r => r.Any(id)).ReturnsAsync(true);
-        var bookservice = new BookService(_repository.Object, _mapper.Object);
+        _repository.Setup(r => r.Any(id, default)).ReturnsAsync(true);
+        var bookservice = new BookService(_repository.Object, _bookStateService.Object, _mapper.Object);
 
         var result = await bookservice.Any(id);
 
@@ -105,12 +107,12 @@ public class BookServiceTest
             )
         };
 
-        _repository.Setup(r => r.GetAll(It.IsAny<int>(), It.IsAny<string>())).ReturnsAsync(expectedBooks);
+        _repository.Setup(r => r.GetAll(It.IsAny<int>(), It.IsAny<string>(), default)).ReturnsAsync(expectedBooks);
         _mapper.Setup(m => m.Map<BookFullResponse>(expectedBooks[0])).Returns(expectedResult[0]);
         _mapper.Setup(m => m.Map<BookFullResponse>(expectedBooks[1])).Returns(expectedResult[1]);
         _mapper.Setup(m => m.Map<BookFullResponse>(expectedBooks[2])).Returns(expectedResult[2]);
 
-        var bookService = new BookService(_repository.Object, _mapper.Object);
+        var bookService = new BookService(_repository.Object, _bookStateService.Object, _mapper.Object);
 
         var result = await bookService.GetAll(request);
 
@@ -156,9 +158,9 @@ public class BookServiceTest
             []
         );
 
-        _repository.Setup(r => r.GetById(id)).ReturnsAsync(expectBook);
+        _repository.Setup(r => r.GetById(id, default)).ReturnsAsync(expectBook);
         _mapper.Setup(m => m.Map<BookFullResponse>(expectBook)).Returns(expectResult);
-        var bookService = new BookService(_repository.Object, _mapper.Object);
+        var bookService = new BookService(_repository.Object, _bookStateService.Object, _mapper.Object);
 
         var result = await bookService.GetById(id);
 
@@ -197,9 +199,9 @@ public class BookServiceTest
             []
         );
 
-        _repository.Setup(r => r.GetByISBN(isbn)).ReturnsAsync(expectBook);
+        _repository.Setup(r => r.GetByISBN(isbn, default)).ReturnsAsync(expectBook);
         _mapper.Setup(m => m.Map<BookFullResponse>(expectBook)).Returns(expectResult);
-        var bookService = new BookService(_repository.Object, _mapper.Object);
+        var bookService = new BookService(_repository.Object, _bookStateService.Object, _mapper.Object);
 
         var result = await bookService.GetByISBN(isbn);
 
@@ -236,20 +238,18 @@ public class BookServiceTest
             Title = "C#",
             Genre = "Fairy Tales",
             Discription = "C#",
-            CoverLink = coverLink,
-            Authors = []
+            CoverLink = coverLink
         };
 
         _mapper.Setup(m => m.Map<Book>(request)).Returns(expectedBook);
 
-        _repository.Setup(r => r.Add(It.IsAny<Book>(), It.IsAny<List<Guid>>())).ReturnsAsync(expect);
+        _repository.Setup(r => r.Add(It.IsAny<Book>(), new List<Guid>(), default));
 
-        var bookService = new BookService(_repository.Object, _mapper.Object);
+        var bookService = new BookService(_repository.Object, _bookStateService.Object, _mapper.Object);
 
-        var result = await bookService.CreateBook(request, coverLink);
+        await bookService.CreateBook(request, coverLink);
 
-        Assert.Equal(result, expect);
-        _repository.Verify(r => r.Add(It.IsAny<Book>(), It.IsAny<List<Guid>>()), Times.Once);
+        _repository.Verify(r => r.Add(It.IsAny<Book>(), new List<Guid>(), default), Times.Once);
     }
 
     [Fact]
@@ -280,16 +280,14 @@ public class BookServiceTest
         };
 
         _mapper.Setup(m => m.Map<Book>(request)).Returns(expectedBook);
-        _repository.Setup(r => r.Update(It.IsAny<Book>(), It.IsAny<List<Guid>>())).ReturnsAsync(expect);
-        _repository.Setup(r => r.Any(It.IsAny<Guid>())).ReturnsAsync(true);
+        _repository.Setup(r => r.Update(It.IsAny<Book>(), new List<Guid>(), default));
+        _repository.Setup(r => r.Any(It.IsAny<Guid>(), default)).ReturnsAsync(true);
 
-        var bookService = new BookService(_repository.Object, _mapper.Object);
+        var bookService = new BookService(_repository.Object, _bookStateService.Object, _mapper.Object);
 
-        var result = await bookService.EditBook(request, coverLink);
+        await bookService.EditBook(request, coverLink);
 
-        Assert.Equal(expect, result);
-
-        _repository.Verify(r => r.Update(It.IsAny<Book>(), It.IsAny<List<Guid>>()), Times.Once);
+        _repository.Verify(r => r.Update(It.IsAny<Book>(), new List<Guid>(), default), Times.Once);
     }
 
     [Fact]
@@ -297,16 +295,15 @@ public class BookServiceTest
     {
         Guid expect = Guid.Parse("0358f2cb-84f5-45d2-b395-6586c49842e1");
 
-        _repository.Setup(r => r.Any(It.IsAny<Guid>())).ReturnsAsync(true);
+        _repository.Setup(r => r.Any(It.IsAny<Guid>(), default)).ReturnsAsync(true);
 
-        _repository.Setup(r => r.DeleteById(It.IsAny<Guid>())).ReturnsAsync(expect);
+        _repository.Setup(r => r.Delete(It.IsAny<Guid>(), default));
 
-        var bookService = new BookService(_repository.Object, _mapper.Object);
+        var bookService = new BookService(_repository.Object, _bookStateService.Object, _mapper.Object);
 
-        var result = await bookService.DeleteBook(expect);
+        await bookService.DeleteBook(expect);
 
-        Assert.Equal(expect, result);
-        _repository.Verify(r => r.DeleteById(It.IsAny<Guid>()), Times.Once);
+        _repository.Verify(r => r.Delete(It.IsAny<Guid>(), default), Times.Once);
     }
 
     [Theory]
@@ -383,12 +380,12 @@ public class BookServiceTest
             )
         };
 
-        _repository.Setup(r => r.GetPage(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<string>())).ReturnsAsync(expectedBooks.Skip(size * (page-1)).Take(size));
+        _repository.Setup(r => r.GetPage(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<string>(), default)).ReturnsAsync(expectedBooks.Skip(size * (page-1)).Take(size));
         _mapper.Setup(m => m.Map<BookFullResponse>(expectedBooks[0])).Returns(expectedResult[0]);
         _mapper.Setup(m => m.Map<BookFullResponse>(expectedBooks[1])).Returns(expectedResult[1]);
         _mapper.Setup(m => m.Map<BookFullResponse>(expectedBooks[2])).Returns(expectedResult[2]);
 
-        var bookService = new BookService(_repository.Object, _mapper.Object);
+        var bookService = new BookService(_repository.Object, _bookStateService.Object, _mapper.Object);
 
         var result = await bookService.GetPage(page, size, request);
 
@@ -480,11 +477,11 @@ public class BookServiceTest
             )
         };
 
-        _repository.Setup(r => r.GetByTitle(title)).ReturnsAsync(expectedBooks);
+        _repository.Setup(r => r.GetByTitle(title, default)).ReturnsAsync(expectedBooks);
         _mapper.Setup(m => m.Map<BookFullResponse>(expectedBooks[0])).Returns(expectedResult[0]);
         _mapper.Setup(m => m.Map<BookFullResponse>(expectedBooks[1])).Returns(expectedResult[1]);
         _mapper.Setup(m => m.Map<BookFullResponse>(expectedBooks[2])).Returns(expectedResult[2]);
-        var bookService = new BookService(_repository.Object, _mapper.Object);
+        var bookService = new BookService(_repository.Object, _bookStateService.Object, _mapper.Object);
 
         var result = await bookService.GetByTitle(title);
 

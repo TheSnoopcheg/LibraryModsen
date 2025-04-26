@@ -38,9 +38,9 @@ public class TokenService(
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
-    public async Task<User?> ValidateRefreshToken(Guid userId, string refreshToken)
+    public async Task<User?> ValidateRefreshToken(Guid userId, string refreshToken, CancellationToken cancelToken = default)
     {
-        var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Id == userId, cancelToken);
         if (user == null || user.RefreshToken != refreshToken || user.RefreshTokenExpiryTime <= DateTime.UtcNow)
             return null;
         return user;

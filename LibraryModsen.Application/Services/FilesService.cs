@@ -12,7 +12,7 @@ public class FilesService(
     private readonly IFilesRepository _repository = repository;
     private readonly IMemoryCache _cache = cache;
 
-    public async Task<Guid> CreateFile(Stream stream, string fileType)
+    public async Task<Guid> CreateFile(Stream stream, string fileType, CancellationToken cancelToken = default)
     {
         using (var memoryStream = new MemoryStream())
         {
@@ -20,8 +20,8 @@ public class FilesService(
 
             Guid guid = Guid.NewGuid();
             byte[] data = memoryStream.ToArray();
-            if (await FileExists(data))
-                return await _repository.GetIdByData(data);
+            if (await FileExists(data, cancelToken))
+                return await _repository.GetIdByData(data, cancelToken);
             var file = new AppFile()
             {
                 Id = guid,
@@ -29,36 +29,38 @@ public class FilesService(
                 Type = fileType
             };
 
-            await _repository.Add(file);
+            await _repository.Add(file, cancelToken);
 
             return guid;
         }
     }
 
-    public async Task<bool> FileExists(byte[] data)
+    public async Task<bool> FileExists(byte[] data, CancellationToken cancelToken = default)
     {
-        return await _repository.AnyByData(data);
+        return await _repository.AnyByData(data, cancelToken);
     }
 
-    public async Task Delete(Guid id)
+    public async Task Delete(Guid id, CancellationToken cancelToken)
     {
-        if (!await _repository.Any(id))
-            return;
-        await _repository.Delete(id);
+        if (!await _repository.Any(id, cancelToken))
+            throw new Exception("File not found");
+        await _repository.Delete(id, cancelToken);
     }
 
-    public async Task<AppFile?> GetFileById(Guid id)
+    public async Task<AppFile?> GetFileById(Guid id, CancellationToken cancelToken = default)
     {
         _cache.TryGetValue(id, out AppFile? file);
         if (file == null)
         {
-            file = await _repository.GetById(id);
+            file = await _repository.GetById(id, cancelToken);
             if(file != null)
             {
                 _cache.Set(id, file, TimeSpan.FromMinutes(5));
             }
         }
 
+        if (file == null)
+            throw new Exception("File not found");
         return file;
     }
 }

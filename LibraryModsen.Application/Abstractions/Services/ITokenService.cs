@@ -6,6 +6,6 @@ namespace LibraryModsen.Application.Abstractions.Services
     {
         Task<string> AssignRefreshTokenToUser(User user);
         Task<string> GenerateToken(User user);
-        Task<User?> ValidateRefreshToken(Guid userId, string refreshToken);
+        Task<User?> ValidateRefreshToken(Guid userId, string refreshToken, CancellationToken cancelToken = default);
     }
 }

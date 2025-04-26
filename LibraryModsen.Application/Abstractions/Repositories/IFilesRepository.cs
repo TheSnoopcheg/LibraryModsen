@@ -2,12 +2,9 @@
 
 namespace LibraryModsen.Application.Abstractions.Repositories;
 
-public interface IFilesRepository
+public interface IFilesRepository : IBaseRepository<AppFile>
 {
-    Task Add(AppFile file);
-    Task<bool> Any(Guid id);
-    Task<bool> AnyByData(byte[] data);
-    Task Delete(Guid id);
-    Task<AppFile?> GetById(Guid id);
-    Task<Guid> GetIdByData(byte[] data);
+    Task<bool> Any(Guid id, CancellationToken cancelToken = default);
+    Task<Guid> GetIdByData(byte[] data, CancellationToken cancelToken = default);
+    Task<bool> AnyByData(byte[] data, CancellationToken cancelToken = default);
 }

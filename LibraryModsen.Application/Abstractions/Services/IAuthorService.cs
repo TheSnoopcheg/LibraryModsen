@@ -5,13 +5,13 @@ namespace LibraryModsen.Application.Abstractions.Services
 {
     public interface IAuthorService
     {
-        Task<bool> Any(Guid id);
-        Task<Guid> CreateAuthor(AuthorCreationRequest request);
-        Task<Guid> DeleteAuthor(Guid id);
-        Task<Guid> EditAuthor(AuthorEditRequest request);
-        Task<IEnumerable<AuthorFullResponse>> GetAll();
-        Task<IEnumerable<BookFullResponse>> GetBooks(Guid id);
-        Task<AuthorFullResponse?> GetById(Guid id);
-        Task<IEnumerable<AuthorFullResponse>> GetPage(int page, int size);
+        Task<bool> Any(Guid id, CancellationToken cancelToken = default);
+        Task CreateAuthor(AuthorCreationRequest request, CancellationToken cancelToken = default);
+        Task DeleteAuthor(Guid id, CancellationToken cancelToken = default);
+        Task EditAuthor(AuthorEditRequest request, CancellationToken cancelToken = default);
+        Task<IEnumerable<AuthorFullResponse>> GetAll(CancellationToken cancelToken = default);
+        Task<IEnumerable<BookFullResponse>> GetBooks(Guid id, CancellationToken cancelToken = default);
+        Task<AuthorFullResponse?> GetById(Guid id, CancellationToken cancelToken = default);
+        Task<IEnumerable<AuthorFullResponse>> GetPage(int page, int size, CancellationToken cancelToken = default);
     }
 }

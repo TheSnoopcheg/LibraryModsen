@@ -2,14 +2,9 @@
 
 namespace LibraryModsen.Application.Abstractions.Repositories;
 
-public interface IAuthorsRepository
+public interface IAuthorsRepository : IBaseRepository<Author>
 {
-    Task<Guid> Add(Author author);
-    Task<bool> Any(Guid id);
-    Task<Guid> Delete(Guid id);
-    Task<IEnumerable<Author>> GetAll();
-    Task<IEnumerable<Book>> GetAuthorBooks(Guid authorId);
-    Task<Author?> GetById(Guid id);
-    Task<IEnumerable<Author>> GetPage(int n, int size);
-    Task<Guid> Update(Author author);
+    Task<bool> Any(Guid id, CancellationToken cancelToken = default);
+    Task<IEnumerable<Book>> GetAuthorBooks(Guid authorId, CancellationToken cancelToken = default);
+    Task<IEnumerable<Author>> GetPage(int n, int size, CancellationToken cancelToken = default);
 }

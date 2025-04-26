@@ -27,12 +27,13 @@ public class BooksRepositoryTest
             ISBN = "1234567890",
             CoverLink = "Somelinkhere",
             Genre = "Fairy tales",
-            Discription = "The best fairy tale in the world"
+            Discription = "The best fairy tale in the world",
+            Authors = []
         };
 
         var repository = new BooksRepository(_context);
 
-        var result = await repository.Add(book, []);
+        var result = await repository.Add(book, default);
 
         Assert.Equal(id, result);
     }

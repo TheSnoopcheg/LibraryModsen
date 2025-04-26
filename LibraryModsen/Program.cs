@@ -7,6 +7,7 @@ using LibraryModsen.Middlewares;
 using LibraryModsen.Persistence;
 using LibraryModsen.Utilities;
 using LibraryModsen.Validators;
+using SharpGrip.FluentValidation.AutoValidation.Mvc.Extensions;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -24,6 +25,10 @@ builder.Services.AddDbContext<LibraryDbContext>(options =>
 });
 
 builder.Services.AddSingleton<GlobalExceptionMiddleware>();
+builder.Services.AddFluentValidationAutoValidation(config =>
+{
+    config.EnableFormBindingSourceAutomaticValidation = true;
+});
 
 builder.Services.Configure<JwtOptions>(config.GetSection("JWT"));
 

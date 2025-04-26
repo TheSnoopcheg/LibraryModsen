@@ -1,22 +1,20 @@
-﻿using LibraryModsen.Application.Abstractions.Repositories;
+﻿using AutoMapper;
+using LibraryModsen.Application.Abstractions.Repositories;
 using LibraryModsen.Domain.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace LibraryModsen.Persistence.Repositories;
 
-public class BooksRepository(LibraryDbContext context) : IBooksRepository
+public class BooksRepository(LibraryDbContext context) : BaseRepository<Book>(context), IBooksRepository
 {
     private readonly LibraryDbContext _context = context;
 
-    public async Task<bool> Any(Guid id)
+    public async Task<bool> Any(Guid id, CancellationToken cancelToken = default)
     {
-        return await _context
-            .Books
-            .AsNoTracking()
-            .AnyAsync(b => b.Id == id);
+        return await Any(b => b.Id == id, cancelToken);
     }
 
-    public async Task<IEnumerable<Book>> GetAll(int type, string fvalue)
+    public async Task<IEnumerable<Book>> GetAll(int type, string fvalue, CancellationToken cancelToken = default)
     {
         IQueryable<Book> query = _context
             .Books
@@ -32,54 +30,61 @@ public class BooksRepository(LibraryDbContext context) : IBooksRepository
             query = query.Where(b => b.Authors.Any(a => a.Id == Guid.Parse(fvalue)));
         }
 
-        return await query.ToListAsync();
+        return await query.ToListAsync(cancelToken);
     }
 
-    public async Task<Book?> GetById(Guid id)
+    public override async Task<Book?> GetById(Guid id, CancellationToken cancelToken = default)
     {
-        return await _context
+        var book = await _context
             .Books
             .AsNoTracking()
             .Include(b => b.Authors)
-            .FirstOrDefaultAsync(b => b.Id == id);
+            .FirstOrDefaultAsync(b => b.Id == id, cancelToken);
+        if (book == null)
+            throw new Exception("Book not found");
+        return book;
     }
 
-    public async Task<Book?> GetByISBN(string iSBN)
+    public async Task<Book?> GetByISBN(string iSBN, CancellationToken cancelToken = default)
     {
-        return await _context
+        var book = await _context
             .Books
             .AsNoTracking()
             .Include(b => b.Authors)
-            .FirstOrDefaultAsync(b => b.ISBN == iSBN);
+            .FirstOrDefaultAsync(b => b.ISBN == iSBN, cancelToken);
+        if (book == null)
+            throw new Exception("Book not found");
+        return book;
     }
 
-    public async Task<IEnumerable<Book>> GetByTitle(string title)
+    public async Task<IEnumerable<Book>> GetByTitle(string title, CancellationToken cancelToken = default)
     {
         return await _context
             .Books
             .FromSql($"select * from Books where Title like {title + "%"}")
             .AsNoTracking()
             .Include(b => b.Authors)
-            .ToListAsync();
+            .ToListAsync(cancelToken);
     }
 
-    public async Task<Guid> Add(Book book, List<Guid> authorIds)
+    public async Task<Guid> Add(Book book, List<Guid> authorIds, CancellationToken cancelToken = default)
     {
         await _context
             .Books
-            .AddAsync(book);
+            .AddAsync(book, cancelToken);
+        var test = book.Authors;
         var authors = await _context
             .Authors
             .Where(a => authorIds.Contains(a.Id))
-            .ToListAsync();
+            .ToListAsync(cancelToken);
         authors.ForEach(a => a.Books.Add(book));
         await _context
-            .SaveChangesAsync();
+            .SaveChangesAsync(cancelToken);
 
         return book.Id;
     }
 
-    public async Task<Guid> Update(Book book, List<Guid> authorsIds)
+    public async Task<Guid> Update(Book book, List<Guid> authorsIds, CancellationToken cancelToken = default)
     {
         _context
             .Books
@@ -87,31 +92,21 @@ public class BooksRepository(LibraryDbContext context) : IBooksRepository
         var authorsWOBooks = await _context
             .Authors
             .Where(a => authorsIds.Contains(a.Id) && !a.Books.Any(b => b.Id == book.Id))
-            .ToListAsync();
+            .ToListAsync(cancelToken);
         authorsWOBooks.ForEach(a => a.Books.Add(book));
         var authorsWBooks = await _context
             .Authors
             .Include(a => a.Books)
             .Where(a => !authorsIds.Contains(a.Id) && a.Books.Any(b => b.Id == book.Id))
-            .ToListAsync();
+            .ToListAsync(cancelToken);
         authorsWBooks.ForEach(a => a.Books.RemoveAll(b => b.Id == book.Id));
         await _context
-            .SaveChangesAsync();
+            .SaveChangesAsync(cancelToken);
 
         return book.Id;
     }
 
-    public async Task<Guid> DeleteById(Guid id)
-    {
-        await _context
-            .Books
-            .Where(b => b.Id == id)
-            .ExecuteDeleteAsync();
-
-        return id;
-    }
-
-    public async Task<IEnumerable<Book>> GetPage(int n, int size, int type, string fvalue)
+    public async Task<IEnumerable<Book>> GetPage(int n, int size, int type, string fvalue, CancellationToken cancelToken = default)
     {
         var query = _context
             .Books
@@ -130,16 +125,16 @@ public class BooksRepository(LibraryDbContext context) : IBooksRepository
         return await query
             .Skip(n * size)
             .Take(size)
-            .ToListAsync();
+            .ToListAsync(cancelToken);
     }
 
-    public async Task<IEnumerable<Book>> GetBooksByAuthor(Guid authorId)
+    public async Task<IEnumerable<Book>> GetBooksByAuthor(Guid authorId, CancellationToken cancelToken = default)
     {
         return await _context
             .Books
             .AsNoTracking()
             .Include(p => p.Authors)
             .Where(p => p.Authors != null && p.Authors.Any(a => a.Id == authorId))
-            .ToListAsync();
+            .ToListAsync(cancelToken);
     }
 }
